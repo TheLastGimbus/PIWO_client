@@ -5,11 +5,13 @@
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 
-/// id's are counted like you will read
+/// id's are counted like you will read text, left to right then up to down
 /// this is where is the module, so when it's first pixel (counting from 0):
 int deviceID = 0;
 /// it's id is 0
-/// id is nothing so important, here, it's just used for static ip
+/// id is nothing so important here, it's just used for static ip
+/// but it's very important for one device to have one iniqie id
+/// so it will be placed correctly in correct window
 
 WiFiClient client;
 IPAddress localIP = IPAddress(192, 168, 1, (201 + deviceID));
@@ -143,6 +145,7 @@ String command(String com){
 	if(com.indexOf("#") == 0){
 		setLed(com);
 	}
+	return response;
 }
 
 void setup() {
