@@ -1,11 +1,15 @@
 #include <ESP8266WiFi.h>
+
+//libraries for OTA
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 
-//////
+/// id's are counted like you will read
+/// this is where is the module, so when it's first pixel (counting from 0):
 int deviceID = 0;
-//////
+/// it's id is 0
+/// id is nothing so important, here, it's just used for static ip
 
 WiFiClient client;
 IPAddress localIP = IPAddress(192, 168, 1, (201 + deviceID));
@@ -15,6 +19,8 @@ int serverPort = 3000;
 const char* wifiName = "Broadcom";
 const char* wifiPass = "";
 
+// this is used for timing when was last time when we had communcation with server
+// so client won't ask is server ok if it just had command from it few seconds ago
 unsigned long long lastMessage = 0;
 
 ADC_MODE(ADC_VCC);
@@ -24,6 +30,7 @@ ADC_MODE(ADC_VCC);
 #define bPin 12
 #define wPin 13
 
+// global values of current analogWrite output
 int red = 0;
 int green = 0;
 int blue = 0;
@@ -39,14 +46,14 @@ void connectToWifi(const char* name, const char* password){
 		digitalWrite(2, 1);
 		delay(500);
 		Serial.println("Connecting to WiFi...");
-		if((millis() - waiting) > 180000){
+		if((millis() - waiting) > 180000){ // if it waits >3 min, it restarts
 			Serial.println("I've waited too long for WiFi! Restarting...");
 			delay(1000);
 			ESP.restart();
 		}
 	}
 	Serial.println("Connected to wifi!");
-	WiFi.config(localIP, WiFi.gatewayIP(), WiFi.subnetMask());
+	WiFi.config(localIP, WiFi.gatewayIP(), WiFi.subnetMask()); // static ip
 }
 
 void connectToServer(IPAddress ip, int port){
@@ -55,14 +62,25 @@ void connectToServer(IPAddress ip, int port){
 		delay(750);
 		digitalWrite(2, 1);
 		Serial.println("Connecting to server...");
+		// what if you lose wifi while infinite server connection loop?
 		if(!WiFi.isConnected()){
 			connectToWifi(wifiName, wifiPass);
 		}
-		ArduinoOTA.handle();
+		ArduinoOTA.handle(); // don't let lack of server make OTA not working
 	}
 	Serial.println("Connected to server!");
 }
 
+String decToHex(byte decValue, byte desiredStringLength = 2) {
+  String hexString = String(decValue, HEX);
+  while (hexString.length() < desiredStringLength) hexString = "0" + hexString;
+
+  return hexString;
+}
+
+// this is function that returns if server responded in surtent time
+// because tcp doesn't detect if server turned of or something
+// you need to do it manually
 bool okRequest(int timeout = 5000){
 	client.print("OK?~");
 	for(int x = 0; x < timeout; x++){
@@ -104,35 +122,23 @@ void setLed(String hex){
 	setLed(r, g, b);
 }
 
-void serialCommand(String com){
-	if(com.indexOf("status") == 0){
-		Serial.println("=====================");
-		Serial.println("DeviceID (client): " + String(deviceID));
-		Serial.println("Vcc: " + String(((float)ESP.getVcc()) / 1024));
-		Serial.println("WiFi name: " + String(wifiName));
-		Serial.println("WiFi pass: " + String(wifiPass));
-		Serial.println("Local IP: " + WiFi.localIP().toString());
-		Serial.println("Server IP: " + serverIP.toString());
-		Serial.println("Server port: " + String(serverPort));
-		Serial.println("Connected to server: " + String(client.connected()));
-		Serial.println("Red: " + String(red));
-		Serial.println("Green: " + String(green));
-		Serial.println("Blue: " + String(blue));
-		Serial.println("White: " + String(white));
-		Serial.println("=====================");
-	}
-	if(com.indexOf("#") == 0){
-		setLed(com);
-	}
-}
-
-void clientCommand(String com){
+// input command, output response
+// for example we input "OK?", output is "OK"
+// and then we can print output however we want
+String command(String com){
+	String response = "";
 	if(com.indexOf("OK?") == 0){
-		client.print("OK~");
+		response += "OK";
 	}
 	if(com.indexOf("VOL?") == 0){
 		float vccVolt = ((float)ESP.getVcc()) / 1024;
-		client.print(String(vccVolt) + "~");
+		response += String(vccVolt);
+	}
+	if(com.indexOf("LED?") == 0){
+		response += "#" +
+		decToHex(red) +
+		decToHex(green) +
+		decToHex(blue);
 	}
 	if(com.indexOf("#") == 0){
 		setLed(com);
@@ -150,8 +156,9 @@ void setup() {
 
 	connectToWifi(wifiName, wifiPass);
 	connectToServer(serverIP, serverPort);
-	lastMessage = millis();
 
+	// OTA setup. OTA let's you upload code through WiFi,
+	// even when ESP is runnign code, and it does that even faster than UART
 	ArduinoOTA.onStart([]() {
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH)
@@ -177,6 +184,8 @@ void setup() {
     else if (error == OTA_END_ERROR) Serial.println("End Failed");
   });
   ArduinoOTA.begin();
+
+	lastMessage = millis();
 }
 
 void loop() {
@@ -187,14 +196,15 @@ void loop() {
 		connectToServer(serverIP, serverPort);
 	}
 
+	// All OTA work. That's all. Just don't do delays >3s and it will work.
 	ArduinoOTA.handle();
 
 	while(Serial.available()){
-		serialCommand(Serial.readStringUntil('\n'));
+		Serial.println(command(Serial.readStringUntil('\n')));
 	}
 
 	while(client.available()){
-		clientCommand(client.readStringUntil('~'));
+		client.print(command(client.readStringUntil('~')) + "~");
 		lastMessage = millis();
 	}
 
