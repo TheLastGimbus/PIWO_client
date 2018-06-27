@@ -7,7 +7,7 @@ http://www.mos.pwr.edu.pl/projekt-p-i-w-o/
 Client takes care about stable connection TCP, and must do anything to make manual reset unnecessary in situations like losing wifi etc. Rest of it's job is just to recive color and display it with diode.
 
 ## PL:
-#### Serwer w PIWO Lite
+#### Klient w PIWO Lite
 Zamysłem projektu PIWO Lite jest zrobienie ekranu z całego budynku. Oryginalnymi autorami tego pomysłu jest koło naukowe MOS z Politechniki Wrocławskiej, więcej o ich projekcie znajdziesz tutaj:
 http://www.mos.pwr.edu.pl/projekt-p-i-w-o/
 
