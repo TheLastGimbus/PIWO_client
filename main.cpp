@@ -14,9 +14,9 @@ int deviceID = 0;
 /// so it will be placed correctly in correct window
 
 WiFiClient client;
-IPAddress localIP = IPAddress(192, 168, 1, (201 + deviceID));
-IPAddress serverIP = IPAddress(192, 168, 1, 200);
-int serverPort = 3000;
+IPAddress localIP = IPAddress(192, 168, 1, (101 + deviceID));
+IPAddress serverIP = IPAddress(192, 168, 1, 100);
+int serverPort = 5000;
 
 const char* wifiName = "Broadcom";
 const char* wifiPass = "";
@@ -38,9 +38,9 @@ int green = 0;
 int blue = 0;
 int white = 0;
 
-void connectToWifi(const char* name, const char* password){
+void connectToWifi(){
 	WiFi.mode(WIFI_STA);
-	WiFi.begin(name, password);
+	WiFi.begin(wifiName, wifiPass);
 	unsigned long long waiting = millis();
 	while (!WiFi.isConnected()) {
 		digitalWrite(2, 0);
@@ -56,21 +56,26 @@ void connectToWifi(const char* name, const char* password){
 	}
 	Serial.println("Connected to wifi!");
 	WiFi.config(localIP, WiFi.gatewayIP(), WiFi.subnetMask()); // static ip
+	Serial.println("IP: " + String());
 }
 
-void connectToServer(IPAddress ip, int port){
-	while(!client.connect(ip, port)){
-		digitalWrite(2, 0);
-		delay(750);
-		digitalWrite(2, 1);
-		Serial.println("Connecting to server...");
+void connectToServer(){
+	client.stop();
+	while (!client.connect(serverIP, serverPort)) {
 		// what if you lose wifi while infinite server connection loop?
 		if(!WiFi.isConnected()){
-			connectToWifi(wifiName, wifiPass);
+			connectToWifi();
 		}
+		digitalWrite(2, 0);
+		delay(1000);
+		digitalWrite(2, 1);
+		Serial.println("Connecting to server...");
 		ArduinoOTA.handle(); // don't let lack of server make OTA not working
 	}
 	Serial.println("Connected to server!");
+	digitalWrite(2, 0);
+	delay(500);
+	digitalWrite(2, 1);
 }
 
 String decToHex(byte decValue, byte desiredStringLength = 2) {
@@ -157,8 +162,8 @@ void setup() {
 	pinMode(wPin, OUTPUT);
 	digitalWrite(2, 1);
 
-	connectToWifi(wifiName, wifiPass);
-	connectToServer(serverIP, serverPort);
+	connectToWifi();
+	connectToServer();
 
 	// OTA setup. OTA let's you upload code through WiFi,
 	// even when ESP is runnign code, and it does that even faster than UART
@@ -193,10 +198,10 @@ void setup() {
 
 void loop() {
 	if(!WiFi.isConnected()){
-		connectToWifi(wifiName, wifiPass);
+		connectToWifi();
 	}
 	if(!client.connected()){
-		connectToServer(serverIP, serverPort);
+		connectToServer();
 	}
 
 	// All OTA work. That's all. Just don't do delays >3s and it will work.
@@ -215,8 +220,7 @@ void loop() {
 		lastMessage = millis();
 		if(!okRequest()){
 			client.stop();
-			client.stopAll();
-			connectToServer(serverIP, serverPort);
+			connectToServer();
 		}
 	}
 }
