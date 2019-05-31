@@ -7,7 +7,7 @@ http://www.mos.pwr.edu.pl/projekt-p-i-w-o/
 PIWO Lite jest budżetową wersją ich projektu.
 
 ##### Klient w PIWO Lite
-Klient dba o stabilne połączenie z serwerem, i robi wszystko, żeby nie wymuszać na użytkowniku ręcznego resetowania w sytuacjach typu zgubienie WiFi itp. Poza tym, po prostu wyświetla odebrany kolor za pomocą diody.
+Klient to pojedynczy moduł z kolorową diodą, którego stawia się przy oknie. Dba o stabilne połączenie z serwerem, i robi wszystko, żeby nie wymuszać na użytkowniku ręcznego resetowania w sytuacjach typu zgubienie WiFi itp. Poza tym, po prostu wyświetla odebrany kolor za pomocą diody.
 
 
 ### EN:
@@ -17,4 +17,4 @@ http://www.mos.pwr.edu.pl/projekt-p-i-w-o/
 PIWO Lite is a low-budget verstion of their project.
 
 ##### Client in PIWO Lite
-Client takes care about stable connection TCP, and does anything to make manual reset unnecessary in situations like losing WiFi etc. Rest of it's job is just to recive color and display it with diode.
+Client is one module with color diode, that you put near the window. It takes care about stable connection TCP, and does anything to make manual reset unnecessary in situations like losing WiFi etc. Rest of it's job is just to recive color and display it with diode.
